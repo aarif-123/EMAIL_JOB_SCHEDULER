@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="robots" content="noindex" />
+    <base href="<%= basePath %>" />
+    <title>ReachInbox • BullMQ Queue Inspector</title>
+    <link rel="alternate icon" type="image/png" href="<%= favIconAlternative %>">
+    <link rel="icon" type="image/svg+xml" id="fav-logo" href="<%= favIconDefault %>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="static/css/main.04944c4f.css" rel="stylesheet">
+
+    <!-- ReachInbox Figma Exact Design System Overrides -->
+    <style>
+      :root {
+        --body-bg: #F9FAFB !important;
+        --header-bg: #FFFFFF !important;
+        --card-bg: #FFFFFF !important;
+        --card-text-secondary-color: #6B7280 !important;
+        --text-color: #111827 !important;
+        --text-secondary-color: #6B7280 !important;
+        --accent-color: #00A859 !important;
+        --accent-color-d1: #008746 !important;
+        --separator-color: #E5E7EB !important;
+        --button-primary-bg: #00A859 !important;
+        --button-primary-color: #FFFFFF !important;
+        --button-primary-hover-bg: #008746 !important;
+        --input-bg: #F3F4F6 !important;
+        --input-border: #E5E7EB !important;
+        --input-focus-border: #00A859 !important;
+        --input-focus-shadow: 0 0 0 2px rgba(0, 168, 89, 0.15) !important;
+        --status-menu-border-color: #E5E7EB !important;
+        --status-menu-text: #6B7280 !important;
+        --status-menu-hover-text: #111827 !important;
+        --status-menu-active-text: #008746 !important;
+        --status-menu-active-border: #00A859 !important;
+        --sticky-header-bg: rgba(255, 255, 255, 0.95) !important;
+        --dropdown-bg: #FFFFFF !important;
+        --dropdown-border-color: #E5E7EB !important;
+        --badge-bg: #E6F4EA !important;
+        --badge-text-color: #008746 !important;
+        --button-default-active-bg: #E6F4EA !important;
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif !important;
+      }
+
+      html, body {
+        background-color: #F9FAFB !important;
+        color: #111827 !important;
+        font-family: 'Plus Jakarta Sans', sans-serif !important;
+      }
+
+      /* 1. TOP HEADER (White, border, crisp ReachInbox logo) */
+      [class*="header-"], header {
+        background: #FFFFFF !important;
+        border-bottom: 1px solid #E5E7EB !important;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+      }
+
+      /* Top left logo inside header */
+      [class*="logo-"] {
+        background-color: #FFFFFF !important;
+        color: #111827 !important;
+        border-right: 1px solid #E5E7EB !important;
+        box-shadow: none !important;
+        font-weight: 700 !important;
+        font-size: 15px !important;
+      }
+
+      [class*="logo-"] > span {
+        color: #111827 !important;
+        font-weight: 700 !important;
+      }
+
+      /* Navigation link in header (← Back to ReachInbox) */
+      [class*="header-"] a:not([class*="logo-"]) {
+        background: #E6F4EA !important;
+        color: #008746 !important;
+        border: 1px solid #A7F3D0 !important;
+        padding: 6px 14px !important;
+        border-radius: 8px !important;
+        font-size: 12px !important;
+        font-weight: 600 !important;
+        text-decoration: none !important;
+        transition: all 0.15s ease !important;
+      }
+
+      [class*="header-"] a:not([class*="logo-"]):hover {
+        background: #00A859 !important;
+        color: #FFFFFF !important;
+      }
+
+      /* 2. LEFT SIDEBAR (100% Pure White, no dark gradients) */
+      [class*="aside-"], aside {
+        background: #FFFFFF !important;
+        border-right: 1px solid #E5E7EB !important;
+        box-shadow: none !important;
+        color: #111827 !important;
+      }
+
+      /* Sidebar section title */
+      [class*="menuHeader-"] {
+        background: #FFFFFF !important;
+      }
+
+      [class*="secondary-"], [class*="menuHeader-"] span {
+        color: #9CA3AF !important;
+        font-size: 11px !important;
+        font-weight: 700 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.05em !important;
+      }
+
+      /* Search input in sidebar */
+      [class*="searchWrapper-"] {
+        background: #FFFFFF !important;
+        border-bottom: 1px solid #F3F4F6 !important;
+      }
+
+      [class*="search-"] {
+        background-color: #F9FAFB !important;
+        border: 1px solid #E5E7EB !important;
+        color: #111827 !important;
+        border-radius: 8px !important;
+      }
+
+      [class*="search-"]::placeholder {
+        color: #9CA3AF !important;
+      }
+
+      [class*="searchWrapper-"] svg {
+        color: #9CA3AF !important;
+      }
+
+      /* Remove dark shadow gradient in sidebar */
+      [class*="navWrapper-"] {
+        background: #FFFFFF !important;
+        mask-image: none !important;
+        -webkit-mask-image: none !important;
+      }
+
+      /* Queue list items */
+      [class*="item-"] {
+        color: #374151 !important;
+        border-radius: 8px !important;
+        margin: 4px 8px !important;
+        padding: 8px 12px !important;
+        font-weight: 500 !important;
+        transition: background-color 0.15s ease !important;
+      }
+
+      [class*="item-"]:hover {
+        background-color: #F3F4F6 !important;
+        color: #111827 !important;
+      }
+
+      /* Active Queue Selected */
+      [class*="item-"][class*="active-"], [class*="active-jDxe19"] {
+        background-color: #E6F4EA !important;
+        color: #008746 !important;
+        font-weight: 600 !important;
+        border-left: 3px solid #00A859 !important;
+      }
+
+      [class*="queueName-"] {
+        color: inherit !important;
+        font-size: 13px !important;
+      }
+
+      [class*="queueStats-"] {
+        background: #E6F4EA !important;
+        color: #008746 !important;
+        border: 1px solid #A7F3D0 !important;
+        font-weight: 600 !important;
+        font-size: 11px !important;
+      }
+
+      /* App version at bottom of sidebar */
+      [class*="appVersion-"] {
+        color: #9CA3AF !important;
+        border-top: 1px solid #F3F4F6 !important;
+        background: #FFFFFF !important;
+      }
+
+      /* 3. MAIN CONTENT AREA */
+      main {
+        background-color: #F9FAFB !important;
+      }
+
+      /* Status navigation tabs (ACTIVE, WAITING, COMPLETED, etc.) */
+      [class*="statusMenu-"], nav {
+        background: #FFFFFF !important;
+        border-bottom: 1px solid #E5E7EB !important;
+      }
+
+      [class*="statusMenu-"] a, [class*="trigger-"], nav a {
+        color: #4B5563 !important;
+        font-weight: 600 !important;
+        font-size: 12px !important;
+        border-bottom: 2px solid transparent !important;
+      }
+
+      [class*="statusMenu-"] a:hover, nav a:hover {
+        color: #111827 !important;
+      }
+
+      [class*="statusMenu-"] a[class*="active"], [class*="isActive-"], nav a[class*="active"] {
+        color: #008746 !important;
+        border-bottom: 2px solid #00A859 !important;
+        background: transparent !important;
+      }
+
+      /* 4. CARDS & JOB ITEMS */
+      article, [class*="card-"], [class*="container-VRLL14"] {
+        background: #FFFFFF !important;
+        border: 1px solid #E5E7EB !important;
+        border-radius: 16px !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03) !important;
+      }
+
+      /* 5. TOP HEADER ICON BUTTONS (Subtle, minimalist, clean — NO chunky green boxes) */
+      [class*="header-"] button,
+      header button,
+      [class*="actions-xXF1YD"] button,
+      [class*="actions-xXF1YD"] [class*="button-"],
+      button[class*="button-vbAEsE"] {
+        background-color: #FFFFFF !important;
+        color: #4B5563 !important;
+        border: 1px solid #E5E7EB !important;
+        border-radius: 8px !important;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+        transition: all 0.15s ease !important;
+      }
+
+      [class*="header-"] button:hover,
+      header button:hover,
+      [class*="actions-xXF1YD"] button:hover,
+      [class*="actions-xXF1YD"] [class*="button-"]:hover,
+      button[class*="button-vbAEsE"]:hover {
+        background-color: #F3F4F6 !important;
+        color: #111827 !important;
+        border-color: #D1D5DB !important;
+      }
+
+      /* Header icons svg fill / stroke */
+      [class*="header-"] button svg,
+      header button svg,
+      [class*="actions-xXF1YD"] button svg,
+      button[class*="button-vbAEsE"] svg {
+        fill: #4B5563 !important;
+        color: #4B5563 !important;
+        transition: fill 0.15s ease, color 0.15s ease !important;
+      }
+
+      [class*="header-"] button:hover svg,
+      header button:hover svg,
+      [class*="actions-xXF1YD"] button:hover svg,
+      button[class*="button-vbAEsE"]:hover svg {
+        fill: #111827 !important;
+        color: #111827 !important;
+      }
+
+      /* 6. DROPDOWN MENUS (Fix truncated text and scrollbars) */
+      [class*="content-ECXbDF"],
+      [role="menu"],
+      [data-radix-menu-content] {
+        background: #FFFFFF !important;
+        border: 1px solid #E5E7EB !important;
+        border-radius: 12px !important;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05) !important;
+        padding: 6px !important;
+        min-width: 220px !important;
+        max-width: 320px !important;
+        width: auto !important;
+        overflow: visible !important;
+      }
+
+      [class*="content-ECXbDF"] a,
+      [class*="content-ECXbDF"] [role="menuitem"],
+      [role="menu"] [role="menuitem"],
+      [role="menu"] a,
+      [data-radix-menu-content] a,
+      [data-radix-menu-content] [role="menuitem"] {
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+        padding: 8px 12px !important;
+        font-size: 13px !important;
+        font-weight: 500 !important;
+        color: #374151 !important;
+        background: transparent !important;
+        border: none !important;
+        border-radius: 6px !important;
+        text-decoration: none !important;
+        white-space: nowrap !important;
+        transition: background 0.15s ease, color 0.15s ease !important;
+      }
+
+      [class*="content-ECXbDF"] a:hover,
+      [class*="content-ECXbDF"] [role="menuitem"]:hover,
+      [role="menu"] [role="menuitem"]:hover,
+      [role="menu"] a:hover,
+      [data-radix-menu-content] a:hover,
+      [data-radix-menu-content] [role="menuitem"]:hover {
+        background: #E6F4EA !important;
+        color: #008746 !important;
+      }
+
+      /* 7. THREE-DOT ACTIONS TRIGGER (Queue cards & Row menus) */
+      [class*="trigger-OWDKKr"],
+      [class*="trigger-GNtOnV"],
+      button[class*="trigger-"] {
+        background-color: #FFFFFF !important;
+        color: #4B5563 !important;
+        border: 1px solid #E5E7EB !important;
+        border-radius: 6px !important;
+        padding: 4px 6px !important;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+        transition: all 0.15s ease !important;
+      }
+
+      [class*="trigger-OWDKKr"]:hover,
+      [class*="trigger-GNtOnV"]:hover,
+      button[class*="trigger-"]:hover {
+        background-color: #F3F4F6 !important;
+        color: #111827 !important;
+        border-color: #D1D5DB !important;
+      }
+
+      [class*="trigger-OWDKKr"] svg,
+      [class*="trigger-GNtOnV"] svg,
+      button[class*="trigger-"] svg {
+        fill: #4B5563 !important;
+        width: 14px !important;
+        height: 14px !important;
+      }
+
+      [class*="trigger-OWDKKr"]:hover svg,
+      [class*="trigger-GNtOnV"]:hover svg,
+      button[class*="trigger-"]:hover svg {
+        fill: #111827 !important;
+      }
+
+      /* 8. QUEUE ROUTE CONTROLS & BUTTONS (/queue/email-dispatch-queue) */
+      /* Queue Page Title & Header */
+      [class*="queueTitle-"] {
+        padding: 12px 0 16px !important;
+      }
+
+      [class*="queueTitle-"] [class*="name-"] {
+        font-size: 20px !important;
+        font-weight: 700 !important;
+        color: #111827 !important;
+        letter-spacing: -0.02em !important;
+      }
+
+      [class*="queueTitle-"] [class*="description-"] {
+        font-size: 13px !important;
+        color: #6B7280 !important;
+        margin-top: 2px !important;
+      }
+
+      /* Status Bar Wrapper */
+      [class*="statusBar-"],
+      .statusBar-a5jlNu {
+        background: #FFFFFF !important;
+        border: 1px solid #E5E7EB !important;
+        border-radius: 12px !important;
+        padding: 4px 10px !important;
+        margin-bottom: 16px !important;
+        display: flex !important;
+        align-items: center !important;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+      }
+
+      /* Remove gradient masks that blur tabs */
+      [class*="statusTabs-"],
+      .statusTabs-hBbuDg {
+        -webkit-mask-image: none !important;
+        mask-image: none !important;
+        overflow-x: auto !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 4px !important;
+        padding: 2px 0 !important;
+      }
+
+      [class*="statusTabs-"]::-webkit-scrollbar,
+      .statusTabs-hBbuDg::-webkit-scrollbar {
+        display: none !important;
+      }
+
+      /* Status Tab Links (Active, Waiting, Completed, Failed, Delayed, Paused) */
+      [class*="statusTabs-"] > li > a,
+      .statusTabs-hBbuDg > li > a {
+        color: #4B5563 !important;
+        font-size: 12px !important;
+        font-weight: 600 !important;
+        padding: 6px 12px !important;
+        border-radius: 8px !important;
+        border: 1px solid transparent !important;
+        border-bottom: 1px solid transparent !important;
+        margin: 0 !important;
+        text-decoration: none !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        transition: all 0.15s ease !important;
+      }
+
+      [class*="statusTabs-"] > li > a:hover,
+      .statusTabs-hBbuDg > li > a:hover {
+        color: #111827 !important;
+        background-color: #F3F4F6 !important;
+      }
+
+      /* Active Status Tab - Clean pill highlight */
+      [class*="statusTabs-"] > li > a.isActive-C2L583,
+      [class*="statusTabs-"] > li > a[class*="isActive-"],
+      .statusTabs-hBbuDg > li > a.isActive-C2L583 {
+        color: #008746 !important;
+        background-color: #E6F4EA !important;
+        border: 1px solid #A7F3D0 !important;
+        font-weight: 700 !important;
+      }
+
+      /* Standard secondary buttons in queue actions toolbar */
+      [class*="queueActions-"] {
+        display: flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        list-style: none !important;
+      }
+
+      [class*="queueActions-"] button,
+      [class*="button-nYphDd"],
+      button[class*="default-RX9iQN"],
+      button[class*="basic-JStFeT"] {
+        background-color: #FFFFFF !important;
+        color: #374151 !important;
+        border: 1px solid #D1D5DB !important;
+        border-radius: 8px !important;
+        font-weight: 500 !important;
+        font-size: 12px !important;
+        padding: 6px 14px !important;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+        transition: all 0.15s ease !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+      }
+
+      [class*="queueActions-"] button:hover,
+      [class*="button-nYphDd"]:hover,
+      button[class*="default-RX9iQN"]:hover,
+      button[class*="basic-JStFeT"]:hover {
+        background-color: #F9FAFB !important;
+        color: #111827 !important;
+        border-color: #9CA3AF !important;
+      }
+
+      [class*="queueActions-"] button svg,
+      [class*="button-nYphDd"] svg,
+      button[class*="default-RX9iQN"] svg {
+        fill: #4B5563 !important;
+        width: 14px !important;
+        height: 14px !important;
+        margin: 0 !important;
+      }
+
+      /* Primary buttons (Add Job) */
+      button[class*="primary-"],
+      button[class*="primary-BOdHls"] {
+        background-color: #00A859 !important;
+        color: #FFFFFF !important;
+        border: 1px solid #008746 !important;
+        border-radius: 8px !important;
+        font-weight: 600 !important;
+        font-size: 12px !important;
+        padding: 6px 16px !important;
+        box-shadow: 0 1px 2px rgba(0, 168, 89, 0.2) !important;
+        transition: background-color 0.15s ease !important;
+      }
+
+      button[class*="primary-"]:hover,
+      button[class*="primary-BOdHls"]:hover {
+        background-color: #008746 !important;
+        color: #FFFFFF !important;
+      }
+
+      button[class*="primary-"] svg,
+      button[class*="primary-BOdHls"] svg {
+        fill: #FFFFFF !important;
+      }
+
+      /* Danger buttons (Empty, Clean, Delete) */
+      [class*="danger-"],
+      button[class*="danger-"],
+      [class*="danger-GDAQpl"] {
+        background-color: #FEF2F2 !important;
+        color: #DC2626 !important;
+        border: 1px solid #FECACA !important;
+        border-radius: 8px !important;
+        font-weight: 500 !important;
+        transition: all 0.15s ease !important;
+      }
+
+      [class*="danger-"]:hover,
+      button[class*="danger-"]:hover,
+      [class*="danger-GDAQpl"]:hover {
+        background-color: #FEE2E2 !important;
+        color: #B91C1C !important;
+        border-color: #FCA5A5 !important;
+      }
+
+      [class*="danger-"] svg,
+      button[class*="danger-"] svg {
+        fill: #DC2626 !important;
+      }
+
+      /* 9. JOB ROW CARDS & ACTIONS */
+      [class*="card-BRjpw_"],
+      .card-BRjpw_ {
+        background-color: #FFFFFF !important;
+        border: 1px solid #E5E7EB !important;
+        border-radius: 12px !important;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+        padding: 16px 20px !important;
+        margin-bottom: 10px !important;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+      }
+
+      [class*="card-BRjpw_"]:hover,
+      .card-BRjpw_:hover {
+        border-color: #D1D5DB !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03) !important;
+      }
+
+      [class*="jobId-bLy5Ry"],
+      .jobId-bLy5Ry {
+        font-family: 'JetBrains Mono', monospace !important;
+        font-size: 13px !important;
+        font-weight: 600 !important;
+        color: #111827 !important;
+      }
+
+      [class*="jobNameInline-ZJ3YIs"],
+      .jobNameInline-ZJ3YIs {
+        font-size: 12px !important;
+        color: #6B7280 !important;
+      }
+
+      /* Checkbox styling */
+      input[type="checkbox"] {
+        accent-color: #00A859 !important;
+        cursor: pointer !important;
+        width: 15px !important;
+        height: 15px !important;
+        border-radius: 4px !important;
+      }
+
+      /* Job Actions: Retry, Promote, Remove */
+      [class*="jobActions-"] {
+        display: flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+      }
+
+      [class*="jobActions-"] button,
+      [class*="button-GXX8BV"],
+      [class*="collapseBtn-J6rMz7"] {
+        background-color: #FFFFFF !important;
+        color: #4B5563 !important;
+        border: 1px solid #E5E7EB !important;
+        border-radius: 6px !important;
+        padding: 5px 10px !important;
+        font-size: 11px !important;
+        font-weight: 500 !important;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+        transition: all 0.15s ease !important;
+      }
+
+      [class*="jobActions-"] button:hover,
+      [class*="button-GXX8BV"]:hover,
+      [class*="collapseBtn-J6rMz7"]:hover {
+        background-color: #F3F4F6 !important;
+        color: #111827 !important;
+        border-color: #D1D5DB !important;
+      }
+
+      [class*="jobActions-"] button svg,
+      [class*="button-GXX8BV"] svg,
+      [class*="collapseBtn-J6rMz7"] svg {
+        fill: #4B5563 !important;
+      }
+
+      /* 10. JOB DETAIL SUB-TABS (Data, Progress, Options, Logs, Error) */
+      [class*="tabActions-"] button,
+      [class*="tabActions-"] [class*="button-"] {
+        background: transparent !important;
+        color: #6B7280 !important;
+        border: none !important;
+        border-bottom: 2px solid transparent !important;
+        border-radius: 0 !important;
+        padding: 8px 14px !important;
+        font-size: 12px !important;
+        font-weight: 600 !important;
+        box-shadow: none !important;
+        transition: all 0.15s ease !important;
+      }
+
+      [class*="tabActions-"] button:hover,
+      [class*="tabActions-"] [class*="button-"]:hover {
+        color: #111827 !important;
+        background: transparent !important;
+      }
+
+      [class*="tabActions-"] button[class*="isActive-"],
+      [class*="tabActions-"] [class*="button-"][class*="isActive-"],
+      [class*="tabActions-"] .isActive-YRKOr3 {
+        color: #008746 !important;
+        border-bottom: 2px solid #00A859 !important;
+        font-weight: 700 !important;
+        background: transparent !important;
+      }
+
+      /* Expanded Code / JSON Blocks */
+      [class*="codeContainerWrapper-"],
+      [class*="jobLogs-"] {
+        background-color: #F9FAFB !important;
+        border: 1px solid #E5E7EB !important;
+        border-radius: 8px !important;
+        padding: 12px !important;
+      }
+
+      /* 11. PAGINATION CONTROLS */
+      [class*="pagination-"] button,
+      [class*="pagination-Jxux8S"] button {
+        background-color: #FFFFFF !important;
+        color: #374151 !important;
+        border: 1px solid #E5E7EB !important;
+        border-radius: 6px !important;
+        padding: 4px 10px !important;
+        font-size: 12px !important;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+        transition: all 0.15s ease !important;
+      }
+
+      [class*="pagination-"] button:hover:not(:disabled) {
+        background-color: #F9FAFB !important;
+        color: #111827 !important;
+        border-color: #D1D5DB !important;
+      }
+
+      [class*="pagination-"] button[class*="isActive-"] {
+        background-color: #E6F4EA !important;
+        color: #008746 !important;
+        border-color: #A7F3D0 !important;
+        font-weight: 600 !important;
+      }
+
+      [class*="pagination-"] button:disabled,
+      [class*="pagination-"] button[class*="disabled-"] {
+        opacity: 0.45 !important;
+        cursor: not-allowed !important;
+        background-color: #F9FAFB !important;
+      }
+
+      /* Code / Monospace elements */
+      code, pre, [class*="mono"] {
+        font-family: 'JetBrains Mono', monospace !important;
+      }
+    </style>
+</head>
+<body>
+<script id="__UI_CONFIG__" type="application/json"><%- uiConfig %></script>
+<div id="root">
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;background:#F9FAFB;font-family:'Plus Jakarta Sans',sans-serif;color:#008746;font-size:0.9rem;gap:1rem;letter-spacing:0.05em;">
+    <span style="display:flex;gap:0.5rem;">
+      <span style="width:0.6rem;height:0.6rem;border-radius:50%;background:#00A859;animation:bb-pulse 1.2s ease-in-out infinite;"></span>
+      <span style="width:0.6rem;height:0.6rem;border-radius:50%;background:#00A859;animation:bb-pulse 1.2s ease-in-out 0.15s infinite;"></span>
+      <span style="width:0.6rem;height:0.6rem;border-radius:50%;background:#00A859;animation:bb-pulse 1.2s ease-in-out 0.3s infinite;"></span>
+    </span>
+    Loading BullMQ Live Queue Telemetry...
+  </div>
+  <style>@keyframes bb-pulse{0%,80%,100%{opacity:.2;transform:scale(.8)}40%{opacity:1;transform:scale(1)}}</style>
+</div>
+<script defer src="static/js/lib-react.719eb9c0.js"></script>
+<script defer src="static/js/lib-router.d467d5aa.js"></script>
+<script defer src="static/js/lib-axios.748d6a60.js"></script>
+<script defer src="static/js/6693.47be15e9.js"></script>
+<script defer src="static/js/main.27c96d4e.js"></script>
+</body>
+</html>
