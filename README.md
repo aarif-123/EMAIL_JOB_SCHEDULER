@@ -1,52 +1,61 @@
-# ReachInbox Email Scheduler & Dispatcher
-> **Outbox Labs Software Development Intern Assignment**  
-> A full-stack, production-grade email scheduling service and dashboard designed for high-volume cold outreach. Built with **BullMQ delayed queues**, **Redis 7 (AOF)**, **PostgreSQL (Drizzle ORM)**, **Elasticsearch 8**, **Ethereal Fake SMTP**, **Real Google OAuth**, and **Live Slack Alerting**.
+# 🚀 ReachInbox Email Scheduler & Dispatch Engine
+
+> **Developer & Engineering Reference Guide**  
+> A full-stack, distributed email scheduling service and real-time operations dashboard built for **ReachInbox (Outbox Labs)**. Engineered with **BullMQ delayed queues**, **Redis 7 AOF persistence**, **PostgreSQL (Drizzle ORM)**, **Elasticsearch 8 full-text indexing**, **Ethereal fake SMTP delivery**, **Google OAuth**, and **Live Slack alerting**.
 
 ---
 
-## 📌 Submission & Reviewer Information
-
-| Parameter | Details |
-|---|---|
-| **Submission Form Link** | [ClickUp Submission Form](https://forms.clickup.com/9005062261/f/8cbwp3n-8876/6NNNJ92DV93PQTAYST) |
-| **GitHub Access Granted To** | `Mitrajit`, `Yadav036` |
-| **Frontend Deployment** | Prepared for Vercel with [`vercel.json`](file:///c:/Users/Mohmmed%20Aarif/Downloads/OUTBOX/project/vercel.json) client SPA rewrite rules |
-| **Backend Architecture** | Express.js + TypeScript + BullMQ Worker + Redis 7 + PostgreSQL 16 + Elasticsearch 8 |
-
----
-
-## 📋 Feature Mapping Matrix
-
-This table maps every assignment requirement to its technical implementation in the codebase:
-
-### 1. Backend Engine & Scheduler Requirements
-| Assignment Requirement | Technical Implementation | Status |
-|---|---|---|
-| **API Email Scheduling** | `POST /api/emails/schedule` parses campaign options, bulk-inserts PostgreSQL rows, and dispatches delayed jobs to BullMQ. | ✅ Implemented |
-| **BullMQ + Redis Job Scheduler** | `Queue` & `Worker` configured with `email-dispatch-queue`. Zero cron jobs used anywhere. | ✅ Implemented |
-| **Ethereal Email SMTP** | Transmits via Nodemailer to Ethereal fake SMTP. Saves authentic `etherealPreviewUrl` for instant UI inspection. | ✅ Implemented |
-| **Elasticsearch Indexing** | `ElasticService` indexes emails into `reachinbox_emails` on schedule, status change, and completion. Full-text search endpoint: `GET /api/emails/search?q=...`. | ✅ Implemented |
-| **Live BullMQ Queue Inspector** | Live Bull-Board dashboard hosted natively at `/admin/queues` showing active, delayed, waiting, completed, and failed jobs. | ✅ Implemented |
-| **Server Restart Durability** | Redis AOF persistence (`--appendonly yes`) + `reconcilePendingEmailsOnStartup()` startup DB recovery loop guaranteeing zero lost jobs and zero duplicate sends. | ✅ Implemented |
-| **Two-Tier Idempotency Defense** | **Tier 1**: Deterministic BullMQ job IDs (`email-{id}`).<br>**Tier 2**: Atomic PostgreSQL conditional claim (`UPDATE ... WHERE status IN ('SCHEDULED', 'RATE_LIMITED') RETURNING id`). | ✅ Implemented |
-| **Worker Concurrency** | Configurable via `WORKER_CONCURRENCY=5`. Parallel worker threads process jobs safely without lock races. | ✅ Implemented |
-| **Provider Throttling Delay** | Minimum delay between individual sends (`MIN_EMAIL_DELAY_MS=2000`) prevents provider throttling. | ✅ Implemented |
-| **Per-Sender Hourly Rate Limiting** | Atomic Redis Lua script checks sender usage per UTC hour window (`ratelimit:{sender}:{YYYY-MM-DD-HH}`). Zero race conditions. | ✅ Implemented |
-| **No-Drop Job Auto-Rescheduling** | When rate limit is reached, jobs are auto-deferred to the top of the next hour window (`nextHour + jitterMs`) without dropping. | ✅ Implemented |
-| **Live Slack Rate Limit Alerts** | Real OAuth + webhook integration. Dispatches formatted Slack Block Kit alert the moment a sender reaches their hourly limit. Zero crash fallback if disconnected. | ✅ Implemented |
-
-### 2. Frontend & UX Requirements
-| Assignment Requirement | Technical Implementation | Status |
-|---|---|---|
-| **Figma Matching Layout & Tokens** | Exact replica of Outbox Labs Figma design tokens, sidebar metrics, active pills, user profile card, and modal layouts. | ✅ Implemented |
-| **Google Login (Real OAuth)** | Integrated `@react-oauth/google` with token exchange backend endpoint `POST /api/auth/google`. | ✅ Implemented |
-| **Compose New Email Modal** | Modal supporting manual recipient entry, CSV/text file lead parser pill, delay settings, hourly limit configuration, and optional scheduled start time. | ✅ Implemented |
-| **Scheduled & Sent Email Tables** | Responsive lists with loading skeletons, empty states, status badges, and one-click Ethereal email sandbox preview links. | ✅ Implemented |
-| **Queue Architecture Telemetry** | Dedicated **Queue & Engine** dashboard displaying live delayed/active/waiting/delivered/failed metrics, Redis memory, worker concurrency, and a **Retry Failed** re-enqueue trigger. | ✅ Implemented |
+## 📑 Table of Contents
+1. [Project Structure](#-project-structure)
+2. [System Architecture & Lifecycle](#-system-architecture--lifecycle)
+3. [Database Schema & Entity Models](#-database-schema--entity-models)
+4. [API Reference Specification](#-api-reference-specification)
+5. [Queue & Worker Mechanics](#-queue--worker-mechanics)
+6. [Developer Setup & Environment](#-developer-setup--environment)
+7. [Testing & Benchmarking Suite](#-testing--benchmarking-suite)
+8. [Vercel & Production Deployment](#-vercel--production-deployment)
+9. [Troubleshooting & Maintenance](#-troubleshooting--maintenance)
 
 ---
 
-## 🏛 System Architecture Overview
+## 📂 Project Structure
+
+```
+.
+├── docker-compose.yml           # Local infrastructure stack (Postgres, Redis 7 AOF, Elasticsearch 8)
+├── vercel.json                  # Vercel deployment & Single Page App rewrite configuration
+├── README.md                    # Developer documentation & engineering reference
+│
+├── backend/                     # Express.js + TypeScript Service & BullMQ Worker Pool
+│   ├── src/
+│   │   ├── config/              # Redis, Elasticsearch, Environment configurations
+│   │   ├── controllers/         # Admin, Auth, Email, and Slack API handlers
+│   │   ├── db/                  # PostgreSQL schema, Drizzle ORM setup, seed scripts & migrations
+│   │   ├── middleware/          # JWT authentication middleware
+│   │   ├── queues/              # BullMQ queue definitions & startup reconciliation logic
+│   │   ├── routes/              # Express API route modules
+│   │   ├── scripts/             # Automated load testing & benchmark report generator
+│   │   ├── services/            # Email SMTP, Elastic, Lua Rate Limiter, Slack Webhooks
+│   │   ├── workers/             # Concurrency worker processor & two-tier claim logic
+│   │   ├── server.ts            # Application bootstrap & Bull-Board inspector server
+│   │   └── test_verification.ts # Automated runnable self-check test suite
+│   ├── drizzle/                 # Versioned SQL migration files
+│   └── package.json             # Backend dependencies & npm scripts
+│
+└── frontend/                    # React 18 + Vite + Tailwind CSS Application
+    ├── src/
+    │   ├── api/                 # Axios HTTP client API services
+    │   ├── components/          # Reusable UI components, Modals, Tables, Headers, Sidebars
+    │   ├── pages/               # Dashboard, Scheduled, Sent, Queue & Engine Architecture pages
+    │   ├── types/               # TypeScript interfaces & API response definitions
+    │   └── index.css            # Tailwind design tokens & custom glassmorphism utilities
+    ├── vercel.json              # Frontend client Vercel rewrite configuration
+    └── package.json             # Frontend dependencies & npm scripts
+```
+
+---
+
+## 🏛 System Architecture & Lifecycle
 
 ```
 ┌───────────────────────────────────────────────────────────────┐
@@ -84,194 +93,167 @@ This table maps every assignment requirement to its technical implementation in 
 └───────────────────────────────────────────────────────────────┘
 ```
 
+### State Machine Lifecycle
+Every scheduled email moves deterministically through the following states:
+
+```
+[SCHEDULED] ──► [QUEUED] ──► [SENDING] ──► [SENT] (Success)
+     │                           │
+     ├───────────────────────────┴──► [FAILED] (Execution Error)
+     │
+     └─► [RATE_LIMITED_RESCHEDULED] ──► Auto-deferred to next hour (+ jitter)
+```
+
 ---
 
-## 🔑 Key Engineering Guarantees & Deep Dives
+## 🗄 Database Schema & Entity Models
+
+The PostgreSQL database uses Drizzle ORM for type-safe queries and versioned migrations.
+
+### Tables Overview
+1. **`users`**: Platform user accounts authenticated via Google OAuth.
+2. **`sender_accounts`**: Verified outbound sender email accounts with hourly limits.
+3. **`email_batches`**: Campaign metadata tracking total email count, delay settings, and start times.
+4. **`scheduled_emails`**: Individual email rows with dispatch status, timestamps, Ethereal preview URLs, and error reasons.
+5. **`email_events`**: Audit trail recording complete event lifecycle (`SCHEDULED`, `CLAIMED`, `SENDING`, `SENT`, `FAILED`, `RATE_LIMITED_RESCHEDULED`).
+6. **`slack_configs`**: Per-user Slack OAuth tokens and webhook configurations.
+
+---
+
+## 🌐 API Reference Specification
+
+### 1. Authentication Endpoints (`/api/auth`)
+* `POST /api/auth/google`: Authenticate user via Google OAuth ID token. Returns JWT `token` and user profile.
+* `POST /api/auth/demo-login`: Instant login fallback for development/demo testing.
+* `GET /api/auth/me`: Fetch authenticated user profile and connected integrations.
+
+### 2. Email Scheduling & Operations (`/api/emails`)
+* `POST /api/emails/schedule`: Schedule a batch campaign or individual emails.
+* `POST /api/emails/parse-leads`: Parse uploaded `.csv` or `.txt` lead file and return extracted emails.
+* `GET /api/emails/scheduled`: Get list of pending scheduled emails for the logged-in user.
+* `GET /api/emails/sent`: Get list of sent/failed emails with Ethereal preview URLs.
+* `GET /api/emails/search?q=...`: Search emails across recipient, sender, subject, and body via Elasticsearch.
+* `GET /api/emails/stats`: Retrieve user-level email telemetry & sender rate limit usage percentages.
+* `GET /api/emails/senders`: List sender accounts.
+* `POST /api/emails/senders`: Add a new sender account.
+
+### 3. Queue & System Admin Endpoints (`/api/admin`)
+* `GET /api/admin/queue-stats`: Retrieve system-wide BullMQ & PostgreSQL counts, memory metrics, worker concurrency, and recent jobs.
+* `POST /api/admin/queue/pause`: Pause the BullMQ email dispatch queue.
+* `POST /api/admin/queue/resume`: Resume the email dispatch queue.
+* `POST /api/admin/queue/clean`: Clean completed or failed jobs from queue memory.
+* `POST /api/admin/queue/reconcile`: Trigger manual DB ➔ BullMQ synchronization check.
+* `POST /api/admin/retry-failed`: Re-enqueue failed emails from database back into BullMQ dispatch queue.
+
+### 4. Slack Alerting Integration (`/api/slack`)
+* `GET /api/slack/status`: Get user's Slack connection status.
+* `GET /api/slack/oauth/authorize`: Get Slack OAuth authorization URL.
+* `GET /api/slack/oauth/callback`: OAuth callback handler storing access token and webhook URL.
+* `POST /api/slack/webhook-url`: Manually set a custom Slack Incoming Webhook URL.
+* `POST /api/slack/test-alert`: Trigger a live test rate-limit alert to Slack.
+
+---
+
+## ⚡ Queue & Worker Mechanics
 
 ### 1. Pure Delayed Scheduling (Zero Cron Jobs)
-- **Constraint**: No OS crons, no `node-cron`, no periodic polling loops.
-- **Implementation**: BullMQ delayed queue with millisecond precision:
-  ```ts
-  const delay = Math.max(0, scheduledDate.getTime() - Date.now());
-  await emailQueue.add('send-email', data, { jobId, delay });
-  ```
+No crons or periodic database polling loops exist. Emails are queued as **BullMQ delayed jobs**:
+```ts
+const delay = Math.max(0, scheduledDate.getTime() - Date.now());
+await emailQueue.add('send-email', data, { jobId: `email-${emailId}`, delay });
+```
 
 ### 2. Server Restart Survival & Zero Lost Jobs
-- **Redis AOF**: Deployed with `--appendonly yes` to guarantee queue state persistence across Redis restarts.
-- **Startup DB Reconciliation**: On Express server boot, `reconcilePendingEmailsOnStartup()` queries PostgreSQL for emails in `SCHEDULED` or `RATE_LIMITED_RESCHEDULED` states and re-enqueues any missing jobs in Redis with their remaining delay:
-  ```ts
-  await reconcilePendingEmailsOnStartup();
-  ```
-- **Result**: Server restarts leave pending emails intact, executing at their exact scheduled time with **zero lost jobs and zero duplicate sends**.
+- **Redis AOF Persistence**: Redis runs with `--appendonly yes` mounted to a Docker volume.
+- **Startup DB Reconciliation**: On boot, `reconcilePendingEmailsOnStartup()` queries PostgreSQL for emails in `SCHEDULED` or `RATE_LIMITED_RESCHEDULED` states and re-enqueues any missing jobs in Redis with their remaining delay.
 
 ### 3. Two-Tier Idempotency Defense
-- **Tier 1 (Enqueue level)**: Deterministic BullMQ job IDs (`email-{scheduledEmailId}`) prevent duplicate queue additions.
-- **Tier 2 (Execution level)**: Atomic PostgreSQL conditional claim query executed before SMTP transmission:
+- **Tier 1 (Enqueue level)**: Deterministic BullMQ job IDs (`email-{scheduledEmailId}`) prevent duplicate queue jobs.
+- **Tier 2 (Worker execution level)**: Atomic PostgreSQL claim query before SMTP dispatch:
   ```sql
   UPDATE scheduled_emails
   SET status = 'SENDING', updated_at = NOW()
   WHERE id = $1 AND status IN ('SCHEDULED', 'RATE_LIMITED_RESCHEDULED')
   RETURNING id;
   ```
-  If BullMQ redelivers a job due to a worker timeout, the second worker claims 0 rows and immediately aborts.
 
-### 4. Per-Sender Hourly Rate Limiting (Zero Dropped Jobs)
-- **Atomic Lua Script**:
-  ```lua
-  local key = KEYS[1]
-  local limit = tonumber(ARGV[1])
-  local ttl = tonumber(ARGV[2])
-  local current = tonumber(redis.call('GET', key) or "0")
-  if current >= limit then
-    return {0, current}
-  else
-    local newVal = redis.call('INCR', key)
-    if newVal == 1 then redis.call('EXPIRE', key, ttl) end
-    return {1, newVal}
-  end
-  ```
-- **Rescheduling**: When a limit is hit, jobs are delayed to the top of the next hour window (`nextHour + jitterMs`) without being dropped or marked as failed.
-
-### 5. Live Slack Alerting
-- Dispatches a live formatted Slack Block Kit card the moment a sender reaches their hourly limit.
-- **Graceful Fallback**: If Slack is not connected, the worker skips notification without crashing or delaying email delivery.
+### 4. Atomic Redis Lua Rate Limiting
+Executes an atomic Lua script in Redis (`ratelimit:{sender}:{YYYY-MM-DD-HH}`) to prevent parallel workers from exceeding hourly sender limits. If a limit is hit, the job is automatically deferred to `nextHour + jitterMs` without dropping.
 
 ---
 
-## ⚙️ Quick Start Guide
+## 🛠 Developer Setup & Environment
 
 ### Prerequisites
-- **Docker & Docker Compose**
-- **Node.js 18+** (tested on Node v22)
-- **npm** or **pnpm**
+- Node.js 18+ (tested on Node v22)
+- Docker & Docker Compose
+- npm or pnpm
 
----
-
-### 1. Start Infrastructure (Postgres, Redis, Elasticsearch)
-From the project root:
+### 1. Start Infrastructure Stack
 ```bash
 docker compose up -d
 ```
 Docker container endpoints:
-- **PostgreSQL**: `localhost:5432` (User: `reachinbox`, Pass: `reachinbox_secret`, DB: `reachinbox_db`)
+- **PostgreSQL 16**: `localhost:5432` (`reachinbox` / `reachinbox_secret`)
 - **Redis 7 (AOF)**: `localhost:6379`
 - **Elasticsearch 8**: `localhost:9200`
 
----
-
-### 2. Run Backend API & BullMQ Worker
+### 2. Setup & Run Backend
 ```bash
 cd backend
 npm install
-npm run db:migrate   # Applies Drizzle ORM migrations
-npm run seed         # Seeds default senders & demo user
-npm run dev          # Starts Express API server & BullMQ Worker
+npm run db:migrate   # Run Drizzle ORM migrations
+npm run seed         # Seed initial senders and demo user
+npm run dev          # Starts Express API & BullMQ Worker
 ```
-Backend Endpoints:
-- **REST API Base**: `http://localhost:5000/api`
-- **Live BullMQ Queue Inspector**: `http://localhost:5000/admin/queues`
+- API Base URL: `http://localhost:5000/api`
+- Live Bull-Board Inspector: `http://localhost:5000/admin/queues`
 
----
-
-### 3. Run Frontend Dashboard
+### 3. Setup & Run Frontend
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
-Frontend App: `http://localhost:5173`
+- Dashboard UI: `http://localhost:5173`
 
 ---
 
-## 🛠 Environment Variables Configuration
+## 🧪 Testing & Benchmarking Suite
 
-### Backend (`backend/.env`)
-```env
-PORT=5000
-NODE_ENV=development
-DATABASE_URL="postgresql://reachinbox:reachinbox_secret@localhost:5432/reachinbox_db"
-REDIS_HOST=localhost
-REDIS_PORT=6379
-REDIS_PASSWORD=
-ELASTICSEARCH_NODE=http://localhost:9200
-WORKER_CONCURRENCY=5
-MIN_EMAIL_DELAY_MS=2000
-DEFAULT_HOURLY_LIMIT_PER_SENDER=50
-JWT_SECRET=reachinbox_super_secret_jwt_key_2025_scheduler
-CLIENT_URL=http://localhost:5173
-GOOGLE_CLIENT_ID=
-SLACK_CLIENT_ID=
-SLACK_CLIENT_SECRET=
-SLACK_REDIRECT_URI=http://localhost:5000/api/slack/oauth/callback
-```
-
-### Frontend (`frontend/.env`)
-```env
-VITE_API_URL=http://localhost:5000/api
-VITE_GOOGLE_CLIENT_ID=
-```
-
----
-
-## 🧪 Testing & Verification Guide
-
-### 1. Automated Verification Suite (`npm run test:verify`)
-Executes unit/integration checks covering atomic Redis Lua scripts, PostgreSQL conditional updates, Ethereal SMTP delivery, and Elasticsearch indexing:
+### 1. Automated Integration Self-Check (`npm run test:verify`)
+Tests atomic Redis Lua scripts, PostgreSQL conditional updates, Ethereal SMTP delivery, and Elasticsearch search:
 ```bash
 cd backend
 npm run test:verify
 ```
 
----
-
-### 2. High-Volume Load & Stress Testing (`npm run test:load`)
-Evaluates system throughput, worker concurrency, and rate limiting under heavy load:
+### 2. High-Volume Load & Stress Benchmark (`npm run test:load`)
+Evaluates batch ingestion throughput, worker delivery speed, and 50x parallel rate-limiter concurrency:
 ```bash
 cd backend
-
-# Standard benchmark (100 emails):
-npm run test:load
-
-# Custom scale benchmarks:
-npm run test:load -- --count=20    # Fast 20-email run
-npm run test:load -- --count=500   # High-volume stress test
-npm run test:load -- --count=1000  # 1,000-email scale evaluation
+npm run test:load -- --count=100
 ```
+Generates `backend/LOAD_TEST_REPORT.md` with latency distribution metrics (P50, P95, P99).
 
 ---
 
-### 3. Manual Step-by-Step Testing & Restart Verification
+## 🚀 Vercel & Production Deployment
 
-#### Scenario A: Create & Schedule Emails
-1. Open `http://localhost:5173`.
-2. Click **"Compose"**.
-3. Select a sender, enter recipients (or click **"Upload List"** to parse a CSV file), set delay and hourly limit, and click **"Send"** (or **"Schedule"**).
-4. Navigate to **"Scheduled"** to view pending items or **"Sent"** to view delivered items.
-5. Click **"View Email"** on any sent row to render the HTML email inside the live Ethereal sandbox.
-
-#### Scenario B: Server Restart Recovery (Zero Lost Jobs)
-1. In the Compose modal, click **"Send Later"** and schedule an email for **2 minutes into the future**.
-2. Verify the item appears under **"Scheduled"** with status `SCHEDULED`.
-3. In your backend terminal, kill the process using `Ctrl + C`.
-4. Restart the backend: `npm run dev`.
-5. Observe the startup log: `🔄 Startup reconciliation complete: verified 1 pending emails`.
-6. Wait 2 minutes: the email delivers on time with status `SENT` and **zero duplicate sends**.
-
-#### Scenario C: Hourly Rate Limiting & Live Slack Alert
-1. In the Compose Modal, set **"Hourly Limit"** to `2`.
-2. Enter `3` recipient emails and click **"Send"**.
-3. Results:
-   - Emails 1 & 2 deliver immediately (`SENT`).
-   - Email 3 exceeds the hourly limit and transitions to `RATE_LIMITED_RESCHEDULED` (scheduled for the next hour window).
-   - If Slack is connected, a live Block Kit alert is sent to your Slack channel.
+### Frontend Vercel Deployment
+1. Import repository into Vercel.
+2. Set Root Directory to `frontend`.
+3. Set Build Command to `npm run build` and Output Directory to `dist`.
+4. Set Environment Variable: `VITE_API_URL=https://<your-backend-api>/api`.
+5. Vercel SPA routing rules configured in [`frontend/vercel.json`](file:///c:/Users/Mohmmed%20Aarif/Downloads/OUTBOX/project/frontend/vercel.json).
 
 ---
 
-## 📹 5-Minute Demo Video Flow Checklist
+## 🔧 Troubleshooting & Maintenance
 
-1. **Overview & Login**: Google SSO login and Figma-matching dashboard layout.
-2. **Compose Campaign & CSV Lead Parsing**: Upload a `.csv` lead file, parse emails, configure provider delay and hourly limit, and schedule.
-3. **Scheduled & Sent Tabs**: Monitor real-time status transitions (`SCHEDULED` ➔ `SENDING` ➔ `SENT`) and open Ethereal Email sandbox links.
-4. **Server Restart Demonstration**: Schedule an email for +60 seconds, terminate backend server (`Ctrl + C`), restart backend (`npm run dev`), and show startup DB reconciliation sending the email on schedule.
-5. **Rate Limiting & Live Slack Notification**: Trigger sender rate limit (e.g. 2/hour) ➔ show 3rd email auto-deferred ➔ verify live Slack alert delivery.
-6. **Queue Telemetry & Bull-Board Inspector**: Show the `/admin/queues` Bull-Board queue inspector and native **Queue & Engine** architecture dashboard.
+| Issue | Cause | Solution |
+|---|---|---|
+| **Redis Connection Error** | Redis Docker container not running | Run `docker compose up -d redis` |
+| **Postgres Migration Failure** | Port 5432 occupied by local Postgres | Stop local Postgres service or update `DATABASE_URL` port |
+| **Elasticsearch Cold Start** | Container initializing index mapping | Wait 10s or run `curl http://localhost:9200` to verify status |
+| **BullMQ Jobs Not Processing** | Worker process crashed | Restart backend with `npm run dev` to re-initialize worker pool |
